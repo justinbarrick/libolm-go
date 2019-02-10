@@ -1,4 +1,4 @@
-package libolm-go
+package libolm
 
 /*
 #cgo LDFLAGS: -lolm
