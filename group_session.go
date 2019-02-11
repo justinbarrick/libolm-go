@@ -8,68 +8,68 @@ package libolm
 import "C"
 
 import (
-    //"encoding/json"
-    "crypto/rand"
-    "unsafe"
+	//"encoding/json"
+	"crypto/rand"
+	"unsafe"
 )
 
 type Encrypter interface {
-    Encrypt(string) (int, string)
-    GetSessionID() string
+	Encrypt(string) (int, string)
+	GetSessionID() string
 }
 
 type GroupSession struct {
-    buf []byte
-    ptr *C.struct_OlmOutboundGroupSession
+	buf []byte
+	ptr *C.struct_OlmOutboundGroupSession
 }
 
 func uchar(ptr []byte) *C.uchar {
-    return (*C.uchar)(unsafe.Pointer(&ptr[0]))
+	return (*C.uchar)(unsafe.Pointer(&ptr[0]))
 }
 
-func newGroupSession() (GroupSession){
-    session_buf := make([]byte, C.olm_outbound_group_session_size())
-    olm_session := C.olm_outbound_group_session(unsafe.Pointer(&session_buf[0]))
+func newGroupSession() GroupSession {
+	session_buf := make([]byte, C.olm_outbound_group_session_size())
+	olm_session := C.olm_outbound_group_session(unsafe.Pointer(&session_buf[0]))
 
-    return GroupSession{buf: session_buf, ptr: olm_session}
+	return GroupSession{buf: session_buf, ptr: olm_session}
 }
 
-func CreateOutboundGroupSession() (GroupSession){
-    session := newGroupSession()
+func CreateOutboundGroupSession() GroupSession {
+	session := newGroupSession()
 
-    random_length := C.olm_init_outbound_group_session_random_length(session.ptr)
-    random_buffer := make([]byte, random_length)
+	random_length := C.olm_init_outbound_group_session_random_length(session.ptr)
+	random_buffer := make([]byte, random_length)
 
-    _, err := rand.Read(random_buffer)
+	_, err := rand.Read(random_buffer)
 
-    if err != nil {
-        // currently we panic when we don't have enough randomness but it
-        // might be better to return an error instead. however I feel like
-        // other programmers might not recognize what a huge issue not having
-        // randomness is so I chose the crash and burn approach
-        panic(err)
-    }
+	if err != nil {
+		// currently we panic when we don't have enough randomness but it
+		// might be better to return an error instead. however I feel like
+		// other programmers might not recognize what a huge issue not having
+		// randomness is so I chose the crash and burn approach
+		panic(err)
+	}
 
-    C.olm_init_outbound_group_session(
-        session.ptr,
-        uchar(random_buffer), random_length,
-    )
+	C.olm_init_outbound_group_session(
+		session.ptr,
+		uchar(random_buffer), random_length,
+	)
 
-    return session
+	return session
 }
 
 func (s GroupSession) GetSessionID() string {
-    id_length := C.olm_outbound_group_session_id_length(s.ptr)
-    id_buffer := make([]byte, id_length)
-    C.olm_outbound_group_session_id(s.ptr, uchar(id_buffer), id_length)
-    return string(id_buffer)
+	id_length := C.olm_outbound_group_session_id_length(s.ptr)
+	id_buffer := make([]byte, id_length)
+	C.olm_outbound_group_session_id(s.ptr, uchar(id_buffer), id_length)
+	return string(id_buffer)
 }
 
 func (s GroupSession) GetSessionKey() string {
-    key_length := C.olm_outbound_group_session_key_length(s.ptr)
-    key_buffer := make([]byte, key_length)
-    C.olm_outbound_group_session_key(s.ptr, uchar(key_buffer), key_length)
-    return string(key_buffer)
+	key_length := C.olm_outbound_group_session_key_length(s.ptr)
+	key_buffer := make([]byte, key_length)
+	C.olm_outbound_group_session_key(s.ptr, uchar(key_buffer), key_length)
+	return string(key_buffer)
 }
 
 /*
@@ -142,22 +142,22 @@ func (s Session) Pickle(key string) (string){
 }
 */
 
-func (s GroupSession) Encrypt(plaintext string) (int, string){
-    plaintext_buffer := []byte(plaintext)
-    
-    message_length := C.olm_group_encrypt_message_length(
-        s.ptr, C.size_t(len(plaintext_buffer)),
-    )
-    message_buffer := make([]byte, message_length)
+func (s GroupSession) Encrypt(plaintext string) (int, string) {
+	plaintext_buffer := []byte(plaintext)
 
-    C.olm_group_encrypt(
-        s.ptr,
-        uchar(plaintext_buffer),
-        C.size_t(len(plaintext_buffer)),
-        uchar(message_buffer), message_length,
-    )
+	message_length := C.olm_group_encrypt_message_length(
+		s.ptr, C.size_t(len(plaintext_buffer)),
+	)
+	message_buffer := make([]byte, message_length)
 
-    return 0, string(message_buffer)
+	C.olm_group_encrypt(
+		s.ptr,
+		uchar(plaintext_buffer),
+		C.size_t(len(plaintext_buffer)),
+		uchar(message_buffer), message_length,
+	)
+
+	return 0, string(message_buffer)
 }
 
 /*

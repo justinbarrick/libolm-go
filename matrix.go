@@ -1,21 +1,21 @@
 package libolm
 
 import (
-    "github.com/justinbarrick/go-matrix/pkg/client/end_to_end_encryption"
-    "github.com/justinbarrick/go-matrix/pkg/models"
+	"github.com/justinbarrick/go-matrix/pkg/client/end_to_end_encryption"
+	"github.com/justinbarrick/go-matrix/pkg/models"
 
-    "github.com/tent/canonical-json-go"
-    "encoding/json"
-    "os"
-    "fmt"
+	"encoding/json"
+	"fmt"
+	"github.com/tent/canonical-json-go"
+	"os"
 )
 
 type UserSession struct {
-    Session Session
-    UserId string
-    DeviceId string
-    DeviceKey string
-    Ed25519Key string
+	Session    Session
+	UserId     string
+	DeviceId   string
+	DeviceKey  string
+	Ed25519Key string
 }
 
 type BotState struct {
@@ -24,7 +24,7 @@ type BotState struct {
 
 type IdentityKeys struct {
 	Curve25519 string `json:"curve25519"`
-	Ed25519 string `json:"ed25519"`
+	Ed25519    string `json:"ed25519"`
 }
 
 type OneTimeKeys struct {
@@ -131,7 +131,7 @@ func (o *Matrix) UploadKeysParams(deviceId, userId string) (*end_to_end_encrypti
 			DeviceID: &deviceId,
 			Keys: map[string]string{
 				fmt.Sprintf("curve25519:%s", deviceId): identityKeys.Curve25519,
-				fmt.Sprintf("ed25519:%s", deviceId): identityKeys.Ed25519,
+				fmt.Sprintf("ed25519:%s", deviceId):    identityKeys.Ed25519,
 			},
 			UserID: &userId,
 		},
@@ -139,7 +139,7 @@ func (o *Matrix) UploadKeysParams(deviceId, userId string) (*end_to_end_encrypti
 
 	signature, err := o.SignObj(deviceKeys)
 	if err != nil {
-		return nil ,err
+		return nil, err
 	}
 
 	deviceKeys.Signatures = map[string]map[string]string{
@@ -150,14 +150,14 @@ func (o *Matrix) UploadKeysParams(deviceId, userId string) (*end_to_end_encrypti
 
 	uploadKeys := end_to_end_encryption.NewUploadKeysParams()
 	uploadKeys.SetKeys(&models.UploadKeysParamsBody{
-		DeviceKeys: deviceKeys,
+		DeviceKeys:  deviceKeys,
 		OneTimeKeys: oneTimeKeys,
 	})
 
 	return uploadKeys, nil
 }
 
-func (o *Matrix) MarkPublished() (error) {
+func (o *Matrix) MarkPublished() error {
 	o.account.MarkKeysAsPublished()
 	return o.Serialize()
 }
