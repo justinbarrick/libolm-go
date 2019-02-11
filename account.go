@@ -9,7 +9,6 @@ import "C"
 
 import (
     //"encoding/json"
-    "fmt"
     "crypto/rand"
     "unsafe"
 )
@@ -40,8 +39,6 @@ func AccountFromPickle(key string, pickle string) (Account){
         unsafe.Pointer(&pickle_buffer[0]), C.size_t(len(pickle_buffer)),
     )
 
-    fmt.Println(account.lastError())
-
     return account
 }
 
@@ -66,8 +63,6 @@ func CreateNewAccount() (Account){
         // randomness is so I chose the crash and burn approach
         panic(err)
     }
-
-    fmt.Println(account.lastError())
 
     C.olm_create_account(account.ptr, unsafe.Pointer(&rand_buf[0]), rand_len)
 
@@ -155,6 +150,4 @@ func (a Account) GenerateOneTimeKeys(count int){
         a.ptr, C.size_t(count),
         unsafe.Pointer(&rand_buf[0]), rand_len,
     )
-
-    fmt.Println(a.lastError())
 }
