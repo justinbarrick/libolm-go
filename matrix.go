@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/tent/canonical-json-go"
-	"os"
 )
 
 type UserSession struct {
@@ -35,61 +34,26 @@ type Matrix struct {
 	account Account
 }
 
-func NewMatrix() (*Matrix, error) {
-	olm := &Matrix{}
-
-	if _, err := os.Stat("state.json"); os.IsNotExist(err) {
-		olm.account = CreateNewAccount()
-		olm.account.GenerateOneTimeKeys(100)
-		err = olm.Serialize()
-		if err != nil {
-			return olm, nil
-		}
-	} else {
-		err = olm.Deserialize()
-		if err != nil {
-			return olm, nil
-		}
-	}
-
-	return olm, nil
+func NewMatrix() (*Matrix) {
+	o := Matrix{}
+	o.account = CreateNewAccount()
+	o.account.GenerateOneTimeKeys(100)
+	return &o
 }
 
-func (o *Matrix) Deserialize() error {
-	f, err := os.Open("state.json")
-	if err != nil {
+func (o *Matrix) UnmarshalJSON(data []byte) error {
+	pickled := ""
+
+	if err := json.Unmarshal(data, &pickled); err != nil {
 		return err
 	}
 
-	defer f.Close()
-
-	botState := BotState{}
-
-	err = json.NewDecoder(f).Decode(&botState)
-	if err != nil {
-		return err
-	}
-
-	o.account = AccountFromPickle("lol", botState.MatrixAccount)
+	o.account = AccountFromPickle("lol", pickled)
 	return nil
 }
 
-func (o *Matrix) Serialize() error {
-	f, err := os.Create("state.json")
-	if err != nil {
-		return err
-	}
-
-	defer f.Close()
-
-	err = json.NewEncoder(f).Encode(BotState{
-		MatrixAccount: o.account.Pickle("lol"),
-	})
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (o *Matrix) MarshalJSON() ([]byte, error) {
+	return []byte(fmt.Sprintf("\"%s\"", o.account.Pickle("lol"))), nil
 }
 
 func (o *Matrix) GetIdentityKeys() IdentityKeys {
@@ -159,7 +123,7 @@ func (o *Matrix) UploadKeysParams(deviceId, userId string) (*end_to_end_encrypti
 
 func (o *Matrix) MarkPublished() error {
 	o.account.MarkKeysAsPublished()
-	return o.Serialize()
+	return nil
 }
 
 func (o *Matrix) GetAccount() Account {
